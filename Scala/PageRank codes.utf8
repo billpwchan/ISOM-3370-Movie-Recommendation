@@ -1,0 +1,174 @@
+/* These are commands used in ubuntu command line
+ * Please read the project write up for more details about parallel implementation
+ * $ sed 1d ratings.csv > noheader.csv //get rid of the headers
+ * 
+ * $ spark-shell
+ */
+
+//the following are scala codes used in spark-shell
+
+val file = sc.textFile("hdfs://master:9000/user/yzhangec/data/noheader.csv")
+//loading data without header
+val fileData = file.map(_.split(",")).map(t => (t(0).toInt, t(1).toInt, t(2).toDouble))
+//convert to (userID, movieID, rating)
+val likeUM = fileData.filter(x => x._3 > 3).map(t => (t._1, t._2)).groupByKey
+val likeMU = fileData.filter(x => x._3 > 3).map(t => (t._2, t._1)).groupByKey
+//convert to to graphs
+
+
+var focusUser = 3
+var relevance = fileData.map(data => data._2).distinct.map(temp => (temp, 1.0 / 9125))
+
+var conMU = likeMU.join(relevance).flatMap {
+	case (movieID, (userID, relevance)) => userID.map(dest => (dest, relevance / userID.size))
+}
+var similarity = conMU.reduceByKey(_ + _).map(x => if(x._1 == focusUser) (x._1, x._2 * 0.8 + 0.2) else (x._1, x._2 * 0.8))
+var conUM = likeUM.join(similarity).flatMap {
+	case (userID, (movieID, similarity)) => movieID.map(dest => (dest, similarity / movieID.size))
+}
+//the above part will not actually be computed, they are used to define vars to avoid recursive defining errors in the recursion
+
+for (i <- 1 to 10) {
+	conMU = likeMU.join(relevance).flatMap {
+		case (movieID, (userID, relevance)) => userID.map(dest => (dest, relevance / userID.size))
+	}
+	similarity = conMU.reduceByKey(_ + _).map(x => if(x._1 == focusUser) (x._1, x._2 * 0.8 + 0.2) else (x._1, x._2 * 0.8))
+
+	conUM = likeUM.join(similarity).flatMap {
+		case (userID, (movieID, similarity)) => movieID.map(dest => (dest, similarity / movieID.size))
+	}
+	relevance = conUM.reduceByKey(_ + _)
+}
+
+val result = relevance.sortBy(x => (x._2, x._1), false).take(20)
+sc.parallelize(result).repartition(1).saveAsTextFile("hdfs://master:9000/user/yzhangec/output/out_3")
+//output to local file
+
+
+//the following are the same except that focal users are changed to 9, 33, 39, 99
+
+
+var focusUser = 9
+
+var relevance = fileData.map(data => data._2).distinct.map(temp => (temp, 1.0 / 9125))
+
+var conMU = likeMU.join(relevance).flatMap {
+	case (movieID, (userID, relevance)) => userID.map(dest => (dest, relevance / userID.size))
+}
+var similarity = conMU.reduceByKey(_ + _).map(x => if(x._1 == focusUser) (x._1, x._2 * 0.8 + 0.2) else (x._1, x._2 * 0.8))
+var conUM = likeUM.join(similarity).flatMap {
+	case (userID, (movieID, similarity)) => movieID.map(dest => (dest, similarity / movieID.size))
+}
+
+for (i <- 1 to 10) {
+	conMU = likeMU.join(relevance).flatMap {
+		case (movieID, (userID, relevance)) => userID.map(dest => (dest, relevance / userID.size))
+	}
+	similarity = conMU.reduceByKey(_ + _).map(x => if(x._1 == focusUser) (x._1, x._2 * 0.8 + 0.2) else (x._1, x._2 * 0.8))
+
+	conUM = likeUM.join(similarity).flatMap {
+		case (userID, (movieID, similarity)) => movieID.map(dest => (dest, similarity / movieID.size))
+	}
+	relevance = conUM.reduceByKey(_ + _)
+}
+
+val result = relevance.sortBy(x => (x._2, x._1), false).take(20)
+
+sc.parallelize(result).repartition(1).saveAsTextFile("hdfs://master:9000/user/yzhangec/output/out_9")
+
+
+
+
+var focusUser = 33
+
+var relevance = fileData.map(data => data._2).distinct.map(temp => (temp, 1.0 / 9125))
+
+var conMU = likeMU.join(relevance).flatMap {
+	case (movieID, (userID, relevance)) => userID.map(dest => (dest, relevance / userID.size))
+}
+var similarity = conMU.reduceByKey(_ + _).map(x => if(x._1 == focusUser) (x._1, x._2 * 0.8 + 0.2) else (x._1, x._2 * 0.8))
+var conUM = likeUM.join(similarity).flatMap {
+	case (userID, (movieID, similarity)) => movieID.map(dest => (dest, similarity / movieID.size))
+}
+
+for (i <- 1 to 10) {
+	conMU = likeMU.join(relevance).flatMap {
+		case (movieID, (userID, relevance)) => userID.map(dest => (dest, relevance / userID.size))
+	}
+	similarity = conMU.reduceByKey(_ + _).map(x => if(x._1 == focusUser) (x._1, x._2 * 0.8 + 0.2) else (x._1, x._2 * 0.8))
+
+	conUM = likeUM.join(similarity).flatMap {
+		case (userID, (movieID, similarity)) => movieID.map(dest => (dest, similarity / movieID.size))
+	}
+	relevance = conUM.reduceByKey(_ + _)
+}
+
+val result = relevance.sortBy(x => (x._2, x._1), false).take(20)
+
+sc.parallelize(result).repartition(1).saveAsTextFile("hdfs://master:9000/user/yzhangec/output/out_33")
+
+
+
+
+var focusUser = 39
+
+var relevance = fileData.map(data => data._2).distinct.map(temp => (temp, 1.0 / 9125))
+
+var conMU = likeMU.join(relevance).flatMap {
+	case (movieID, (userID, relevance)) => userID.map(dest => (dest, relevance / userID.size))
+}
+var similarity = conMU.reduceByKey(_ + _).map(x => if(x._1 == focusUser) (x._1, x._2 * 0.8 + 0.2) else (x._1, x._2 * 0.8))
+var conUM = likeUM.join(similarity).flatMap {
+	case (userID, (movieID, similarity)) => movieID.map(dest => (dest, similarity / movieID.size))
+}
+
+for (i <- 1 to 10) {
+	conMU = likeMU.join(relevance).flatMap {
+		case (movieID, (userID, relevance)) => userID.map(dest => (dest, relevance / userID.size))
+	}
+	similarity = conMU.reduceByKey(_ + _).map(x => if(x._1 == focusUser) (x._1, x._2 * 0.8 + 0.2) else (x._1, x._2 * 0.8))
+
+	conUM = likeUM.join(similarity).flatMap {
+		case (userID, (movieID, similarity)) => movieID.map(dest => (dest, similarity / movieID.size))
+	}
+	relevance = conUM.reduceByKey(_ + _)
+}
+
+val result = relevance.sortBy(x => (x._2, x._1), false).take(20)
+
+sc.parallelize(result).repartition(1).saveAsTextFile("hdfs://master:9000/user/yzhangec/output/out_39")
+
+
+
+
+
+var focusUser = 99
+
+var relevance = fileData.map(data => data._2).distinct.map(temp => (temp, 1.0 / 9125))
+
+var conMU = likeMU.join(relevance).flatMap {
+	case (movieID, (userID, relevance)) => userID.map(dest => (dest, relevance / userID.size))
+}
+var similarity = conMU.reduceByKey(_ + _).map(x => if(x._1 == focusUser) (x._1, x._2 * 0.8 + 0.2) else (x._1, x._2 * 0.8))
+var conUM = likeUM.join(similarity).flatMap {
+	case (userID, (movieID, similarity)) => movieID.map(dest => (dest, similarity / movieID.size))
+}
+
+for (i <- 1 to 10) {
+	conMU = likeMU.join(relevance).flatMap {
+		case (movieID, (userID, relevance)) => userID.map(dest => (dest, relevance / userID.size))
+	}
+	similarity = conMU.reduceByKey(_ + _).map(x => if(x._1 == focusUser) (x._1, x._2 * 0.8 + 0.2) else (x._1, x._2 * 0.8))
+
+	conUM = likeUM.join(similarity).flatMap {
+		case (userID, (movieID, similarity)) => movieID.map(dest => (dest, similarity / movieID.size))
+	}
+	relevance = conUM.reduceByKey(_ + _)
+}
+
+val result = relevance.sortBy(x => (x._2, x._1), false).take(20)
+
+sc.parallelize(result).repartition(1).saveAsTextFile("hdfs://master:9000/user/yzhangec/output/out_99")
+
+//Get the output from hadoop
+//$ hadoop fs -get hdfs://master:9000/user/yzhangec/output 
